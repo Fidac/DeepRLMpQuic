@@ -1,10 +1,11 @@
-FROM ubuntu:bionic
+FROM ubuntu:groovy
 USER root
 RUN rm -rf /usr/local/bin/mn /usr/local/bin/mnexec \
     /usr/local/lib/python*/*/*mininet* \
     /usr/local/bin/ovs-* /usr/local/sbin/ovs-* \
     && apt-get update \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y \
+       apt-utils \
        mininet \
        gcc \
        python3-minimal \
@@ -26,7 +27,7 @@ RUN rm -rf /usr/local/bin/mn /usr/local/bin/mnexec \
     && apt install python3-pip \
     && python3 -m pip install --upgrade pip \
     && pip3 install Jupyter \
-    && python3 -m pip install matplotlib=="2.0.2" \
+    && python3 -m pip install matplotlib \
     && python3 -m pip install keras-rl \
     && python3 -m pip install keras-rl2 \
     && python3 -m pip install tensorflow \
