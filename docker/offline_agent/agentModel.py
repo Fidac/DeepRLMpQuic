@@ -1,6 +1,5 @@
 from keras.models import Sequential
 from keras.layers import Dense, Activation, Flatten
-from rl.agents.sarsa import SARSAAgent
 
 from keras.optimizers import Adam
 
@@ -37,9 +36,7 @@ def generate_agent(steps=1000):
     model = generate_model()
 
     dqn = OfflineDQNAgent(model=model, nb_actions=2, memory=memory, nb_steps_warmup=200,
-                          target_model_update=1e-4, policy=policy, enable_double_dqn=True)
-
-    # dqn = SARSAAgent(model=model, nb_actions=2, nb_steps_warmup=200, policy=policy)
+                          target_model_update=1e-4, policy=policy, enable_double_dqn=False)
 
     dqn.compile(Adam(lr=1e-3), metrics=['mae'])
 

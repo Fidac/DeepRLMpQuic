@@ -14,14 +14,19 @@ ACONG = "-validCongestion %s"
 END = "> /App/logs/server.logs 2>&1"
 
 BASIC_DELAY = 100
+BASIC_LOSS = 50
 
 CLIENT_CMD = "/App/quic/client_mt -m https://10.0.0.20:6121/test3  > /App/logs/client.logs 2>&1 &"
 
-TCP_SERVER_CMD = "cd /var/www && python -m SimpleHTTPServer 80 &"
-TCP_CLIENT_CMD0 = "curl --interface client-eth0 -s -o /dev/null 10.0.0.20/test3 &"
-TCP_CLIENT_CMD1 = "curl --interface client-eth1 -s -o /dev/null 10.0.0.20/test3 &"
-TCP_DUMP_TCP="tcpdump -nn -i client-eth1 \"src 10.0.0.20 and tcp\" > /App/logs/tcp_packets.logs 2>&1 &"
-TCP_DUMP_MPQUIC="tcpdump -nn -i client-eth1 \"src 10.0.0.20 and udp\" > /App/logs/mpquic_packets.logs 2>&1 &"
+TCP_SERVER_CMD0= "cd /var/www && python -m SimpleHTTPServer 91 &"
+TCP_SERVER_CMD1 = "cd /var/www && python -m SimpleHTTPServer 80 &"
+TCP_CLIENT_CMD0 = "curl --interface client-eth0 -s -o /dev/null 10.0.0.20:91/test3 &"
+TCP_CLIENT_CMD1 = "curl --interface client-eth1 -s -o /dev/null 10.0.0.20:80/test3 &"
+
+TCP_DUMP_TCP_ETH1="tcpdump -nn -i client-eth1 \"src 10.0.0.20 and tcp\" > /App/logs/tcp_packets_eth1.logs 2>&1 &"
+TCP_DUMP_MPQUIC_ETH1="tcpdump -nn -i client-eth1 \"src 10.0.0.20 and udp\" > /App/logs/mpquic_packets_eth1.logs 2>&1 &"
+TCP_DUMP_TCP_ETH0="tcpdump -nn -i client-eth0 \"src 10.0.0.20 and tcp\" > /App/logs/tcp_packets_eth0.logs 2>&1 &"
+TCP_DUMP_MPQUIC_ETH0="tcpdump -nn -i client-eth0 \"src 10.0.0.20 and udp\" > /App/logs/mpquic_packets_eth0.logs 2>&1 &"
 
 def setup():
     net = setup_environment()
@@ -29,21 +34,27 @@ def setup():
     return net
 
 
-def exec_test(server_cmd, rtt, tcp_traffic, dif_start, gap):
+def exec_test(server_cmd, rtt, tcp_traffic, dif_start, gap, loss_eth0, loss_eth1):
     network = setup()
 
     s1 = network.get("s1")
     server = network.get("server")
     client = network.get("client")
-    client.cmd(TCP_DUMP_TCP)
-    client.cmd(TCP_DUMP_MPQUIC)
+
+    client.cmd(TCP_DUMP_TCP_ETH1)
+    client.cmd(TCP_DUMP_MPQUIC_ETH1)
+    client.cmd(TCP_DUMP_TCP_ETH0)
+    client.cmd(TCP_DUMP_MPQUIC_ETH0)
+
     if tcp_traffic:
-        server.cmd(TCP_SERVER_CMD)
+        server.cmd(TCP_SERVER_CMD0)
+        server.cmd(TCP_SERVER_CMD1)
+
     server.sendCmd(server_cmd)
     client.cmd("sleep 1")
 
-    s1.cmd("./scripts/set_delay.bash %d" % int((BASIC_DELAY + rtt) / 2))
-    client.cmd("./scripts/client_set_delay.bash %d" % int((BASIC_DELAY + rtt) / 2))
+    s1.cmd("./scripts/set_delay.bash %d" % (int((BASIC_DELAY + rtt) / 2)))
+    client.cmd("./scripts/client_set_delay.bash %d %d %d" % (int((BASIC_DELAY + rtt) / 2), loss_eth0, loss_eth1))
     if(dif_start == 1):
         client.cmd(CLIENT_CMD)
         time.sleep(gap)
@@ -56,7 +67,7 @@ def exec_test(server_cmd, rtt, tcp_traffic, dif_start, gap):
             client.cmd(TCP_CLIENT_CMD1)
         time.sleep(gap)
         client.cmd(CLIENT_CMD)
-    time.sleep(30)
+    time.sleep(100)
 
 #    start = time.time()
 #    client.sendCmd(CLIENT_CMD)
@@ -74,17 +85,17 @@ def exec_test(server_cmd, rtt, tcp_traffic, dif_start, gap):
 #    else:
         # TODO: Check for errors here?? How??
 #        delta = time.time() - start
-    client.sendInt()
-    network.stop()
-    time.sleep(1)
-    network.cleanup()
-    server.sendInt()
+    # client.sendInt()
+    # network.stop()
+    # time.sleep(1)
+    # network.cleanup()
+    # server.sendInt()
 
-    server.monitor()
-    server.waiting = False
+    # server.monitor()
+    # server.waiting = False
 
 
-def do_training(is_training, weight_file, epsilon, dif_start, gap, rtt=0, vcong=0, tcp_b=False, validate=False):
+def do_training(is_training, weight_file, epsilon, dif_start, gap, loss_eth0, loss_eth1, rtt=0, vcong=0, tcp_b=False, validate=False):
     server_cmd = " ".join([SERVER_CMD, CERTPATH, SCH, ARGS, COMMON])
     if is_training:
         server_cmd = " ".join([server_cmd, TRAINING])
@@ -94,7 +105,7 @@ def do_training(is_training, weight_file, epsilon, dif_start, gap, rtt=0, vcong=
         epsilon = 0.
     server_cmd = " ".join([server_cmd, WFILE % weight_file, EPS % epsilon, ACONG % vcong, END])
 
-    exec_test(server_cmd, rtt, tcp_b, dif_start, gap)
+    exec_test(server_cmd, rtt, tcp_b, dif_start, gap, loss_eth0, loss_eth1)
 
 
 if __name__ == '__main__':
@@ -108,7 +119,9 @@ if __name__ == '__main__':
     parser.add_argument('--validating', dest="validating", action="store_true",  help="activates the validation")
     parser.add_argument('--different-start', type=int, dest="dif_start", default=0, help="specify who go first")
     parser.add_argument('--gap', type=int, dest="gap", default=0, help="specify the gap between MPQUIC and TCP")
+    parser.add_argument('--lethl', type=int, dest="lethl", default=0, help="specify the loss rate at eth-0 link")
+    parser.add_argument('--lethr', type=int, dest="lethr", default=0, help="specify the loss rate at eth-1 link")
 
 
     args = parser.parse_args()
-    do_training(args.training, args.wfile, args.epsilon, args.dif_start, args.gap, args.rtt, args.vcong, args.tcp_background, args.validating)
+    do_training(args.training, args.wfile, args.epsilon, args.dif_start, args.gap, args.lethl, args.lethr, args.rtt, args.vcong, args.tcp_background, args.validating)

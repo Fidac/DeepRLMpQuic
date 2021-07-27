@@ -3,7 +3,8 @@ from agentModel import generate_agent
 
 def main():
     dqn_agent = generate_agent()
-    dqn_agent.save_weights("./blank_weights.h5")
+    dqn_agent.save_weights("./blank_weights.h5", overwrite=True)
+
 
 if __name__ == "__main__":
     main()
