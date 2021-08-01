@@ -8,7 +8,7 @@ RUN rm -rf /usr/local/bin/mn /usr/local/bin/mnexec \
        apt-utils \
        mininet \
        gcc \
-    #    python \
+       python \
        python3-minimal \
        python3-pip \
        iputils-ping \
@@ -19,12 +19,13 @@ RUN rm -rf /usr/local/bin/mn /usr/local/bin/mnexec \
        locales \
        libhdf5-dev \
        libhdf5-serial-dev \
-    #    python3-h5py \
+       python3-h5py \
        python3-pandas \
        python3-matplotlib \
        vim \
        bc \
        psmisc \
+       tcpdump \
     && apt install python3-pip \
     && python3 -m pip install --upgrade pip \
     && pip3 install Jupyter \
@@ -34,6 +35,7 @@ RUN rm -rf /usr/local/bin/mn /usr/local/bin/mnexec \
     && python3 -m pip install keras-rl2==1.0.4 \
     && pip3 install mininet \
     && update-rc.d openvswitch-switch defaults
+RUN mv /usr/sbin/tcpdump /usr/bin/tcpdump
 WORKDIR /var/www
 COPY www/* /var/www
 # Set the locale
@@ -43,7 +45,7 @@ ENV LANG en_US
 ENV LANGUAGE en_US:en
 ENV LC_ALL en_US
 WORKDIR /notebooks
-COPY notebooks/images/* /notebooks/images/
+#COPY notebooks/images/* /notebooks/images/
 COPY notebooks/*.ipynb /notebooks/
 WORKDIR /App
 COPY . /App
