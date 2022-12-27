@@ -25,3 +25,5 @@ Once Ubuntu is installed, install docker:
 ```$ sudo snap install docker```
 
 ---
+## Technical Report
+The pdf file Appendix-Technical Report has a deep description an explanation not only in the changes to the original code to achieve our work, but also a description of the meaning and purpose of the other repositories that are used in this project and the original code.
