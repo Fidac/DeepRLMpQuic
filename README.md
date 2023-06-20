@@ -1,4 +1,6 @@
-# The following Readme is taken from the original work that provided the implementation to run experiments. The Technical report pdf and the paper have a detailed explanation of the changes done to the original implementation. Also, the docker folder on this project is our adaptation to the original implementation and has all the changes. The way to run it is described in the Technical Report and can be supported by the original work documentation.
+# Description of the Readme
+
+The following Readme is taken from the original work that provided the implementation to run experiments. The Technical report pdf and the paper have a detailed explanation of the changes done to the original implementation. Also, the docker folder on this project is our adaptation to the original implementation and has all the changes. The way to run it is described in the Technical Report and can be supported by the original work documentation.
 
 # Multi-Path Scheduling with Deep Reinforcement Learning
 This project contains my master thesis and all the files for reproducing
